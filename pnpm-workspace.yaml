@@ -1,0 +1,11 @@
+allowBuilds:
+  "@clerk/shared": true
+  "@depot/cli": false
+  "@google/genai": true
+  "@prisma/client": true
+  "@prisma/engines": true
+  esbuild: true
+  ffmpeg-static: true
+  prisma: true
+  protobufjs: true
+  unrs-resolver: true

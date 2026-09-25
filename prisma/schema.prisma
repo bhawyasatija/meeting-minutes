@@ -1,0 +1,339 @@
+// File: prisma/schema.prisma
+// Purpose: the single source of truth for our database tables (designed in Milestone 2).
+// Change tables here, then run `pnpm db:migrate` to update the database. Never edit the
+// database by hand. Every table has a text id (cuid) plus createdAt/updatedAt.
+// Rule: every row a user owns is reached through User -> Meeting, and queries must filter by userId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection, used by the running app
+  directUrl = env("DIRECT_URL") // direct connection, used by `prisma migrate`
+}
+
+// ---------------------------------------------------------------- enums
+
+enum MeetingStatus {
+  UPLOADED
+  QUEUED
+  TRANSCRIBING
+  ANALYSING
+  COMPLETED
+  FAILED
+  PENDING_DELETION
+}
+
+enum SourceType {
+  AUDIO
+  PASTED_TEXT
+  TXT
+  PDF
+  DOCX
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TranscriptSource {
+  SPEECH // produced by speech recognition (Milestone 8)
+  UPLOADED // read from an uploaded text/PDF/DOCX file
+  PASTED // pasted by the user
+}
+
+enum ReportItemType {
+  AGENDA
+  DISCUSSION
+  DECISION
+  RISK
+  OPEN_QUESTION
+  NEXT_STEP
+}
+
+enum ActionStatus {
+  OPEN
+  DONE
+}
+
+enum JobType {
+  TRANSCRIBE
+  ANALYSE
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum ActivityType {
+  UPLOADED
+  COMPLETED
+  FAILED
+  EXPORTED
+  SHARED
+}
+
+enum ThemePreference {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+// ---------------------------------------------------------------- people
+
+/// One row per Clerk account. Created on first visit or by the Clerk webhook.
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String?
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settings       UserSettings?
+  meetings       Meeting[]
+  activityEvents ActivityEvent[]
+  usageRecords   UsageRecord[]
+}
+
+model UserSettings {
+  userId      String          @id
+  language    String          @default("en")
+  theme       ThemePreference @default(SYSTEM)
+  companyName String?
+  logoUrl     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------- meetings
+
+/// The central record. Everything else about a meeting hangs off this row.
+model Meeting {
+  id             String        @id @default(cuid())
+  userId         String
+  title          String
+  meetingDate    DateTime      @default(now())
+  sourceType     SourceType
+  language       String        @default("en")
+  status         MeetingStatus @default(UPLOADED)
+  durationSec    Int?
+  errorMessage   String?
+  consentAt      DateTime? // when the user confirmed they may upload this recording
+  organizationId String? // empty for now; reserved for team accounts later
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files          MeetingFile[]
+  participants   Participant[]
+  transcript     Transcript?
+  report         Report?
+  jobs           ProcessingJob[]
+  activityEvents ActivityEvent[]
+
+  @@index([userId, createdAt(sort: Desc)]) // dashboard and history lists, newest first
+  @@index([userId, status]) // status filters, finding stuck jobs
+}
+
+model MeetingFile {
+  id         String   @id @default(cuid())
+  meetingId  String
+  storageKey String   @unique // the file's key in UploadThing storage
+  url        String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  meetingId String
+  name      String
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meeting     Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  actionItems ActionItem[]
+
+  @@unique([meetingId, name])
+}
+
+// ---------------------------------------------------------------- transcript
+
+/// Kept separate from Report so a report can be regenerated without paying to transcribe again.
+model Transcript {
+  id          String           @id @default(cuid())
+  meetingId   String           @unique // one per meeting
+  rawText     String
+  cleanedText String?
+  source      TranscriptSource
+  wordCount   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  meeting  Meeting             @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  segments TranscriptSegment[]
+}
+
+model TranscriptSegment {
+  id           String   @id @default(cuid())
+  transcriptId String
+  position     Int
+  startMs      Int
+  endMs        Int
+  text         String
+  speaker      String? // empty until speaker identification exists
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transcript Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+
+  @@index([transcriptId, position]) // read a transcript in order
+}
+
+// ---------------------------------------------------------------- report
+
+model Report {
+  id               String   @id @default(cuid())
+  meetingId        String   @unique // one per meeting
+  title            String
+  executiveSummary String
+  conclusion       String?
+  model            String // which AI model wrote it, e.g. "gemini-2.5-flash"
+  promptVersion    String // which prompt version, so results can be traced
+  isEdited         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  meeting     Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  items       ReportItem[]
+  actionItems ActionItem[]
+  shareLinks  ShareLink[]
+}
+
+/// List-type sections of a report: agenda, discussion points, decisions, risks, questions, next steps.
+model ReportItem {
+  id        String         @id @default(cuid())
+  reportId  String
+  type      ReportItemType
+  position  Int
+  text      String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, type, position])
+}
+
+/// Tasks are their own rows so the dashboard can list open tasks across all meetings in one query.
+/// ownerName keeps the AI's text even when that person is not in the participant list.
+model ActionItem {
+  id            String       @id @default(cuid())
+  reportId      String
+  participantId String?
+  task          String
+  ownerName     String? // null means "Owner not stated"
+  deadline      DateTime?    @db.Date
+  deadlineNote  String? // e.g. "end of next week", when no exact date was given
+  priority      Priority     @default(MEDIUM)
+  status        ActionStatus @default(OPEN)
+  position      Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  report      Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  participant Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+
+  @@index([reportId])
+  @@index([status, deadline]) // open and overdue lists
+  @@index([participantId])
+}
+
+model ShareLink {
+  id                String    @id @default(cuid())
+  reportId          String
+  token             String    @unique // long random value, generated in code (Milestone 10)
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  includeTranscript Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}
+
+// ---------------------------------------------------------------- operations
+
+/// History of background runs (Trigger.dev), one row per attempt sequence.
+model ProcessingJob {
+  id           String    @id @default(cuid())
+  meetingId    String
+  type         JobType
+  status       JobStatus @default(QUEUED)
+  attempts     Int       @default(0)
+  triggerRunId String?
+  error        String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+/// Feeds the dashboard activity list.
+model ActivityEvent {
+  id        String       @id @default(cuid())
+  userId    String
+  meetingId String?
+  type      ActivityType
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting Meeting? @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([meetingId])
+}
+
+/// One row per user per day. Used for daily quotas and cost tracking.
+model UsageRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  day          DateTime @db.Date
+  uploads      Int      @default(0)
+  audioSeconds Int      @default(0)
+  tokensIn     Int      @default(0)
+  tokensOut    Int      @default(0)
+  costMicros   Int      @default(0) // cost in millionths of a US dollar
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+}
