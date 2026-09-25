@@ -6,7 +6,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileAudio, FileText, Loader2, UploadCloud } from "lucide-react";
+import { AlertCircle, FileAudio, FileText, Loader2, UploadCloud } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -61,12 +61,13 @@ export function UploadPanel() {
       </div>
 
       {error && (
-        <p
+        <div
           role="alert"
-          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="animate-fade-up flex items-start gap-2.5 rounded-md border border-destructive/40 bg-destructive/10 px-3.5 py-3 text-sm text-destructive"
         >
-          {error}
-        </p>
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>{error}</p>
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -121,7 +122,7 @@ function UploadTarget({
     <div
       className={cn(
         "flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center transition-colors",
-        dragOver ? "border-primary bg-secondary" : "border-border",
+        dragOver ? "border-primary bg-secondary" : "border-border hover:border-primary/50 hover:bg-secondary/40",
       )}
       onDragOver={(e) => {
         e.preventDefault();

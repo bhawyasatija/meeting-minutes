@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
 import { getDashboardData, DashboardStats, RecentMeetings } from "@/features/dashboard";
 import { Button } from "@/components/ui/button";
+import { LiveRefresh } from "@/components/shared/live-refresh";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
+      <LiveRefresh active={data.inProgressMeetings > 0} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">

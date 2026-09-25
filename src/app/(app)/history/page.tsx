@@ -3,6 +3,9 @@ import type { MeetingStatus } from "@prisma/client";
 import { getCurrentUser } from "@/features/auth";
 import { searchMeetings, HistoryFilters, HistoryList, RESULTS_LIMIT } from "@/features/history";
 import { MEETING_STATUS_LABEL } from "@/features/meetings";
+import { LiveRefresh } from "@/components/shared/live-refresh";
+
+const IN_PROGRESS_STATUSES = ["UPLOADED", "QUEUED", "TRANSCRIBING", "ANALYSING"];
 
 export const metadata: Metadata = { title: "History" };
 
@@ -22,8 +25,11 @@ export default async function HistoryPage({
   const parsedStatus = parseStatus(status);
   const meetings = await searchMeetings(user.id, { query: q, status: parsedStatus });
 
+  const hasInProgress = meetings.some((m) => IN_PROGRESS_STATUSES.includes(m.status));
+
   return (
     <div className="max-w-3xl space-y-6">
+      <LiveRefresh active={hasInProgress} />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">History</h1>
         <p className="text-muted-foreground">

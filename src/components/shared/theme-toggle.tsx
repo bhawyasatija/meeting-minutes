@@ -24,7 +24,9 @@ export function ThemeToggle() {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      {isDark ? <Sun /> : <Moon />}
+      <span key={isDark ? "sun" : "moon"} className="animate-fade-in">
+        {isDark ? <Sun /> : <Moon />}
+      </span>
     </Button>
   );
 }

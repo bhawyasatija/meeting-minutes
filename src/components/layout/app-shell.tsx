@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
+import { PageTransition } from "./page-transition";
 import { SidebarNav } from "./sidebar-nav";
 
 // Layout for every signed-in page: sidebar on large screens, a compact menu row on small ones.
@@ -35,7 +36,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           </div>
         </header>
         <main id="main" className="flex-1 p-4 lg:p-7">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

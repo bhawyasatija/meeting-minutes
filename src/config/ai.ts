@@ -7,7 +7,7 @@ export const aiConfig = {
   // that Google's own forums show as a recurring pattern on its newest flash-tier models, not a
   // one-off glitch — see docs/adr/0009-groq-ai-analysis-swap.md.
   model: "openai/gpt-oss-120b",
-  promptVersion: "2026-09-v2",
+  promptVersion: "2026-09-v3",
   // Sentinel string the model is instructed to write when the transcript does not say something,
   // instead of guessing. Code compares against this exact string to convert it to a real null
   // in fields the database allows that for (see analyze-meeting.ts).

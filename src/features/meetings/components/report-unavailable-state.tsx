@@ -22,7 +22,7 @@ export function ReportProcessingState({ status }: { status: Meeting["status"] })
         <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
         <p className="text-sm text-muted-foreground">{PROCESSING_LABEL[status]}</p>
         <p className="text-xs text-muted-foreground">
-          Refresh this page in a minute to check progress.
+          This page updates automatically — no need to refresh.
         </p>
       </CardContent>
     </Card>

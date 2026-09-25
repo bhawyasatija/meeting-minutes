@@ -33,7 +33,7 @@ export function MeetingListItem({ meeting }: { meeting: MeetingListItemData }) {
   const Icon = SOURCE_ICON[meeting.sourceType];
 
   return (
-    <li className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+    <li className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-secondary/60">
       <div className="flex min-w-0 items-center gap-2.5">
         <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <div className="min-w-0">

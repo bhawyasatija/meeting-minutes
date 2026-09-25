@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 // "highlight" reuses the design system's highlighter-yellow token, reserved for action items
 // (see globals.css's comment on `mark`) — used here only for the HIGH-priority action-item tag.
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
+  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap transition-colors",
   {
     variants: {
       variant: {

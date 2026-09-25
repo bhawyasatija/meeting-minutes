@@ -58,10 +58,15 @@ const participantSchema = {
 const responseSchema = {
   type: "object",
   properties: {
-    title: { type: "string", description: "A short, specific meeting title." },
+    title: {
+      type: "string",
+      description:
+        "A short, specific title you write yourself by reading the transcript. Always write one, even for a brief, informal, or unusual transcript -- never the \"Not stated\" placeholder here.",
+    },
     executiveSummary: {
       type: "string",
-      description: "2-4 sentences, for someone who was not there.",
+      description:
+        "2-4 sentences YOU write, summarizing whatever the transcript actually contains -- this is your synthesis, not a quote. Always write one, even for a brief, informal, or unusual transcript. Never the \"Not stated\" placeholder here; that placeholder is only for individual facts elsewhere in this schema (an owner's name, a deadline, a role) that must not be guessed.",
     },
     conclusion: {
       type: "string",
@@ -98,8 +103,13 @@ place on ${meetingDate.toISOString().slice(0, 10)}.
 
 Rules:
 - Use only what the transcript actually says. Never invent a name, date, decision or fact.
-- Whenever a field asks for something the transcript does not state, write the exact string
-  "${aiConfig.notStated}" for that field. Do not leave it blank and do not guess.
+- The "${aiConfig.notStated}" rule below applies to individual FACTS the transcript would need to
+  state directly (a person's name, a role, a deadline, how the meeting concluded) -- never to
+  "title" or "executiveSummary". Those two are always your own summary of whatever the transcript
+  contains, however brief or unusual it is: read it and describe it in your own words. Do not
+  write "${aiConfig.notStated}" for either of them under any circumstance.
+- For every other field that asks for something the transcript does not state, write the exact
+  string "${aiConfig.notStated}" for that field. Do not leave it blank and do not guess.
 - Leave a list empty (an empty array) if the transcript has nothing for that section — do not
   pad it with invented items.
 - Empty sections are a normal, correct result for a short or informal meeting.

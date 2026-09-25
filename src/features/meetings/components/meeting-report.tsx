@@ -6,6 +6,7 @@ import type { ReportItemType } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/features/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LiveRefresh } from "@/components/shared/live-refresh";
 import { getMeetingReport } from "../services/get-meeting-report";
 import { ActionItemsSection } from "./action-items-section";
 import { ReportFailedState, ReportProcessingState } from "./report-unavailable-state";
@@ -27,9 +28,11 @@ export async function MeetingReport({ meetingId }: { meetingId: string }) {
   if (!meeting) notFound();
 
   const { report } = meeting;
+  const stillProcessing = meeting.status !== "FAILED" && !report;
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <LiveRefresh active={stillProcessing} />
       <ReportHeader meeting={meeting} />
 
       {meeting.status === "FAILED" ? (

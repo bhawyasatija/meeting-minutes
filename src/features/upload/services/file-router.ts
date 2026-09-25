@@ -7,17 +7,28 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { getCurrentUser } from "@/features/auth";
 import { queueMeetingIntake } from "@/features/transcripts";
-import { checkUploadAllowed } from "./check-upload-limits";
+import { checkUploadAllowed, QuotaExceededError } from "./check-upload-limits";
 import { createMeetingFromUpload } from "./create-meeting-from-upload";
 
 const f = createUploadthing();
 
 // Runs before an upload starts (in the browser's request, so Clerk's cookies are present).
 // Throwing here stops the upload before any bytes are sent.
+//
+// UploadThing only forwards the message of an UploadThingError to the browser's
+// onUploadError callback -- any other thrown value becomes a generic "Failed to run
+// middleware" 500, which is why a plain QuotaExceededError must be re-wrapped here.
 async function authorizeUpload() {
   const user = await getCurrentUser().catch(() => null);
   if (!user) throw new UploadThingError("You need to be signed in to upload.");
-  await checkUploadAllowed(user.id);
+  try {
+    await checkUploadAllowed(user.id);
+  } catch (error) {
+    if (error instanceof QuotaExceededError) {
+      throw new UploadThingError(error.message);
+    }
+    throw error;
+  }
   // TEMPORARY (upload-flow debugging): confirms the presigned-URL step has a real userId.
   console.warn("[upload] authorizeUpload ok, userId =", user.id);
   return { userId: user.id };

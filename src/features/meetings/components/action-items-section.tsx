@@ -40,7 +40,7 @@ export function ActionItemsSection({ items }: { items: ActionItem[] }) {
               return (
                 <li
                   key={item.id}
-                  className="flex flex-col gap-2 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+                  className="-mx-2 flex flex-col gap-2 rounded-md px-2 py-3.5 transition-colors first:pt-0 last:pb-0 hover:bg-secondary/60 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                 >
                   <div className="min-w-0 space-y-1.5">
                     <p className="font-serif text-[15px] leading-snug">{item.task}</p>
@@ -63,7 +63,10 @@ export function ActionItemsSection({ items }: { items: ActionItem[] }) {
                       )}
                     </div>
                   </div>
-                  <Badge variant={PRIORITY_VARIANT[item.priority]} className="shrink-0">
+                  <Badge
+                    variant={PRIORITY_VARIANT[item.priority]}
+                    className="shrink-0 transition-transform hover:scale-105"
+                  >
                     {item.priority}
                   </Badge>
                 </li>

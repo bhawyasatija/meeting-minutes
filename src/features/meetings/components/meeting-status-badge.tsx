@@ -28,6 +28,26 @@ const MEETING_STATUS_VARIANT: Record<
   PENDING_DELETION: "outline",
 };
 
+// These statuses are the ones LiveRefresh (src/components/shared/live-refresh.tsx) is actively
+// polling behind the scenes, so the badge gets a small pulsing dot to say "this is still moving"
+// rather than just sitting there looking the same as a stalled state would.
+const LIVE_STATUSES: ReadonlySet<Meeting["status"]> = new Set([
+  "UPLOADED",
+  "QUEUED",
+  "TRANSCRIBING",
+  "ANALYSING",
+]);
+
 export function MeetingStatusBadge({ status }: { status: Meeting["status"] }) {
-  return <Badge variant={MEETING_STATUS_VARIANT[status]}>{MEETING_STATUS_LABEL[status]}</Badge>;
+  return (
+    <Badge variant={MEETING_STATUS_VARIANT[status]}>
+      {LIVE_STATUSES.has(status) && (
+        <span className="relative flex size-1.5" aria-hidden>
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-current opacity-75" />
+          <span className="relative inline-flex size-1.5 rounded-full bg-current" />
+        </span>
+      )}
+      {MEETING_STATUS_LABEL[status]}
+    </Badge>
+  );
 }

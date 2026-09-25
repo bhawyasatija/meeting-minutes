@@ -17,7 +17,10 @@ export function ReportListSection({ title, items }: { title: string; items: Repo
       <CardContent>
         <ul className="space-y-2.5">
           {items.map((item) => (
-            <li key={item.id} className="flex gap-2.5">
+            <li
+              key={item.id}
+              className="-mx-2 flex gap-2.5 rounded-md px-2 py-1 transition-colors hover:bg-secondary/60"
+            >
               <span aria-hidden className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary/50" />
               <span className="font-serif text-[15px] leading-relaxed">{item.text}</span>
             </li>
