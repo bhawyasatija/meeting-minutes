@@ -5,7 +5,12 @@
 // Rule: every row a user owns is reached through User -> Meeting, and queries must filter by userId.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "native" keeps local dev working on Apple Silicon (darwin-arm64). Trigger.dev Production
+  // bundles the locally-generated client rather than reinstalling on its own Linux build machine
+  // (see trigger.config.ts's prismaExtension, which forces a matching regenerate at deploy time),
+  // so the engine for its runtime must also be generated up front, explicitly, here.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {

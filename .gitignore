@@ -27,3 +27,4 @@ npm-debug.log*
 .vercel
 .trigger
 _tmp_*
+.env*
