@@ -5,28 +5,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Meeting } from "@prisma/client";
-import { Badge } from "@/components/ui/badge";
-
-const STATUS_LABEL: Record<Meeting["status"], string> = {
-  UPLOADED: "Uploaded",
-  QUEUED: "Queued",
-  TRANSCRIBING: "Transcribing",
-  ANALYSING: "Analyzing",
-  COMPLETED: "Completed",
-  FAILED: "Failed",
-  PENDING_DELETION: "Pending deletion",
-};
-
-const STATUS_VARIANT: Record<Meeting["status"], "default" | "outline" | "success" | "destructive"> =
-  {
-    UPLOADED: "outline",
-    QUEUED: "outline",
-    TRANSCRIBING: "default",
-    ANALYSING: "default",
-    COMPLETED: "success",
-    FAILED: "destructive",
-    PENDING_DELETION: "outline",
-  };
+import { MeetingStatusBadge } from "./meeting-status-badge";
 
 export function ReportHeader({ meeting }: { meeting: Meeting }) {
   return (
@@ -45,7 +24,7 @@ export function ReportHeader({ meeting }: { meeting: Meeting }) {
             {meeting.meetingDate.toLocaleDateString("en", { dateStyle: "medium" })}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANT[meeting.status]}>{STATUS_LABEL[meeting.status]}</Badge>
+        <MeetingStatusBadge status={meeting.status} />
       </div>
     </div>
   );

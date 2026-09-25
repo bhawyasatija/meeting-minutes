@@ -1,26 +1,43 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
-import { getRecentMeetings, RecentMeetings } from "@/features/dashboard";
+import { getDashboardData, DashboardStats, RecentMeetings } from "@/features/dashboard";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-// Temporary: proves login and the database work together, plus a lightweight recent-meetings
-// list so a completed meeting's report is reachable. The real dashboard is Milestone 11.
 export default async function DashboardPage() {
   const user = await getCurrentUser();
-  const meetings = await getRecentMeetings(user.id);
+  const data = await getDashboardData(user.id);
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          You are signed in as {user.email ?? "your account"}, and your account is saved in the
-          database (since {user.createdAt.toLocaleDateString("en", { dateStyle: "medium" })}). The
-          full dashboard is built in Milestone 11.
-        </p>
+    <div className="max-w-3xl space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Welcome{user.name ? `, ${user.name.split(" ")[0]}` : ""}
+          </h1>
+          <p className="text-muted-foreground">
+            Here&apos;s what&apos;s happening with your meetings.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/upload">
+            <Plus /> New meeting
+          </Link>
+        </Button>
       </div>
-      <RecentMeetings meetings={meetings} />
+
+      <DashboardStats
+        totalMeetings={data.totalMeetings}
+        completedMeetings={data.completedMeetings}
+        inProgressMeetings={data.inProgressMeetings}
+        meetingsTodayCount={data.meetingsTodayCount}
+        meetingsPerDayLimit={data.meetingsPerDayLimit}
+      />
+
+      <RecentMeetings meetings={data.recentMeetings} />
     </div>
   );
 }
