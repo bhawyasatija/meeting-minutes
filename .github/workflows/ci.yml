@@ -1,0 +1,43 @@
+# CI. Moved here from docs/ci-workflow.yml (that file now just points here) so it actually
+# runs on GitHub Actions. The build step needs every env var src/lib/env.ts requires at
+# import time (it's imported by the root layout), so this uses fake-but-correctly-shaped
+# values for CI only -- not real secrets, never used to reach a real service. Set the repo's
+# real secrets under Settings > Secrets if you want to build against your actual Clerk app.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  # Clerk validates that this decodes to something domain-shaped, so a simpler placeholder
+  # (e.g. "pk_test_000...") fails the build at the Clerk SDK's own key-format check, not
+  # just env.ts's. This decodes to "ci-placeholder.clerk.accounts.dev$" -- fake, not reachable.
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2ktcGxhY2Vob2xkZXIuY2xlcmsuYWNjb3VudHMuZGV2JA==
+  CLERK_SECRET_KEY: sk_test_ci_placeholder_0000000000000000000000
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?sslmode=disable"
+  DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?sslmode=disable"
+  UPLOADTHING_TOKEN: ci_placeholder_token
+  TRIGGER_SECRET_KEY: tr_dev_ci_placeholder
+  GROQ_API_KEY: gsk_ci_placeholder_0000000000000000000000
+  GOOGLE_GENERATIVE_AI_API_KEY: ci_placeholder_key
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm format:check
+      - run: pnpm test
+      - run: pnpm build

@@ -1,9 +1,18 @@
 # Minutes: AI meeting minutes and action items
 
-Transform meetings into structured knowledge automatically. Upload a recording or notes and get a
-summary, decisions, and action items with owners and deadlines, ready to share as a PDF.
+Transform meetings into structured knowledge automatically. Upload a recording, a pasted
+transcript, or a document (txt/pdf/docx), and get a structured report back: an executive summary,
+agenda/discussion/decision/risk items, and action items with owners, deadlines and priority.
 
-**Status:** Milestone 8 of 15 (speech recognition). No AI analysis yet; that arrives in Milestone 9.
+**Status:** core pipeline is live and deployed. Upload → transcription (Groq-hosted Whisper) →
+AI analysis (Groq-hosted `openai/gpt-oss-120b`) → report, all working end to end, with a
+dashboard, history, and settings pages, and live status updates while a meeting is processing (no
+manual reload needed). Deployed: the app on Vercel, background jobs on Trigger.dev Production.
+
+**Not built yet:** public share links and PDF/branded export (`ShareLink` model and
+`src/features/sharing`/`src/features/pdf` exist as placeholders for a later pass, not working
+features — don't expect a share link or a PDF download yet) and editing a generated report in
+place.
 
 ## Run it on your computer (first time)
 
@@ -85,8 +94,10 @@ If a recording gets stuck on "Queued", `pnpm trigger:dev` probably isn't running
 | `pnpm build`       | Builds the production version                     |
 | `pnpm lint`        | Checks code for common mistakes                   |
 | `pnpm typecheck`   | Checks TypeScript types                           |
+| `pnpm test`        | Runs the unit test suite (Vitest) once            |
+| `pnpm test:watch`  | Runs the unit test suite, re-running on file save |
 | `pnpm format`      | Formats all files consistently                    |
-| `pnpm check`       | Runs lint, typecheck and format check together    |
+| `pnpm check`       | Runs lint, typecheck, format check and tests      |
 | `pnpm db:migrate`  | Applies table changes from `prisma/schema.prisma` |
 | `pnpm db:studio`   | Opens a browser view of the database tables       |
 | `pnpm trigger:dev` | Runs background jobs (transcription) locally      |
@@ -99,9 +110,10 @@ src/features/     One folder per feature (auth, upload, meetings, ...)
 src/components/   ui/ (shadcn), layout/, shared/ (reusable pieces)
 src/lib/          Tools with no feature knowledge (env, utils)
 src/config/       Site name and product limits
-src/prompts/      Versioned AI prompts (Milestone 9)
-prisma/           Database schema (Milestone 6)
-trigger/          Background jobs (Milestone 8)
+src/prompts/      Placeholder for versioned AI prompts; the real prompt + schema
+                  currently lives inline in src/features/ai's groq-provider.ts
+prisma/           Database schema
+trigger/          Background jobs (transcription + AI analysis pipeline)
 docs/adr/         Short records of big decisions
 ```
 

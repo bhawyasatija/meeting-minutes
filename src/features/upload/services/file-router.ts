@@ -29,8 +29,6 @@ async function authorizeUpload() {
     }
     throw error;
   }
-  // TEMPORARY (upload-flow debugging): confirms the presigned-URL step has a real userId.
-  console.warn("[upload] authorizeUpload ok, userId =", user.id);
   return { userId: user.id };
 }
 
@@ -50,19 +48,9 @@ export const meetingFileRouter = {
   })
     .middleware(authorizeUpload)
     .onUploadComplete(async ({ metadata, file }) => {
-      // TEMPORARY (upload-flow debugging): if this line never appears in the terminal running
-      // `pnpm dev`, UploadThing never called this handler at all — see route.ts's isDev fix.
-      console.warn(
-        "[upload] onUploadComplete (meetingRecording) fired, userId =",
-        metadata.userId,
-        "file =",
-        file.name,
-      );
       try {
         const meeting = await createMeetingFromUpload(metadata.userId, "AUDIO", file);
-        console.warn("[upload] Meeting created:", meeting.id);
         await queueMeetingIntake(meeting.id);
-        console.warn("[upload] queueMeetingIntake done for", meeting.id);
         return { meetingId: meeting.id };
       } catch (error) {
         console.error("[upload] onUploadComplete (meetingRecording) threw:", error);
@@ -81,22 +69,13 @@ export const meetingFileRouter = {
   })
     .middleware(authorizeUpload)
     .onUploadComplete(async ({ metadata, file }) => {
-      // TEMPORARY (upload-flow debugging): see the matching comment on meetingRecording above.
-      console.warn(
-        "[upload] onUploadComplete (meetingDocument) fired, userId =",
-        metadata.userId,
-        "file =",
-        file.name,
-      );
       try {
         const meeting = await createMeetingFromUpload(
           metadata.userId,
           sourceTypeForMime(file.type),
           file,
         );
-        console.warn("[upload] Meeting created:", meeting.id);
         await queueMeetingIntake(meeting.id);
-        console.warn("[upload] queueMeetingIntake done for", meeting.id);
         return { meetingId: meeting.id };
       } catch (error) {
         console.error("[upload] onUploadComplete (meetingDocument) threw:", error);

@@ -122,7 +122,9 @@ function UploadTarget({
     <div
       className={cn(
         "flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center transition-colors",
-        dragOver ? "border-primary bg-secondary" : "border-border hover:border-primary/50 hover:bg-secondary/40",
+        dragOver
+          ? "border-primary bg-secondary"
+          : "border-border hover:border-primary/50 hover:bg-secondary/40",
       )}
       onDragOver={(e) => {
         e.preventDefault();

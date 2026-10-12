@@ -61,12 +61,12 @@ const responseSchema = {
     title: {
       type: "string",
       description:
-        "A short, specific title you write yourself by reading the transcript. Always write one, even for a brief, informal, or unusual transcript -- never the \"Not stated\" placeholder here.",
+        'A short, specific title you write yourself by reading the transcript. Always write one, even for a brief, informal, or unusual transcript -- never the "Not stated" placeholder here.',
     },
     executiveSummary: {
       type: "string",
       description:
-        "2-4 sentences YOU write, summarizing whatever the transcript actually contains -- this is your synthesis, not a quote. Always write one, even for a brief, informal, or unusual transcript. Never the \"Not stated\" placeholder here; that placeholder is only for individual facts elsewhere in this schema (an owner's name, a deadline, a role) that must not be guessed.",
+        '2-4 sentences YOU write, summarizing whatever the transcript actually contains -- this is your synthesis, not a quote. Always write one, even for a brief, informal, or unusual transcript. Never the "Not stated" placeholder here; that placeholder is only for individual facts elsewhere in this schema (an owner\'s name, a deadline, a role) that must not be guessed.',
     },
     conclusion: {
       type: "string",

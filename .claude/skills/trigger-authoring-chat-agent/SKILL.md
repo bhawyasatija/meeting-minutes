@@ -24,13 +24,16 @@ If those paths don't exist, `@trigger.dev/sdk` isn't installed yet — install i
 ## Common mistakes
 
 - **CRITICAL: calling the `streamText` imported from `ai`.**
+
   ```ts
   // Wrong - compaction / steering / background injection silently no-op
   import { streamText } from "ai";
   run: async ({ messages, signal }) => streamText({ model, messages, abortSignal: signal });
   // Correct - the run argument's streamText carries the managed options
-  run: async ({ messages, signal, streamText }) => streamText({ model, messages, abortSignal: signal });
+  run: async ({ messages, signal, streamText }) =>
+    streamText({ model, messages, abortSignal: signal });
   ```
+
   The SDK's one carries the `prepareStep` behind compaction, mid-turn steering and background
   injection, the system prompt from `chat.prompt()` or `chat.agent({ system })`, the registry-resolved
   model, and telemetry. The imported one carries none of it, with no error.
