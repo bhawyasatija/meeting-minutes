@@ -1,127 +1,99 @@
-# Minutes: AI meeting minutes and action items
+# MOM — Meeting Intelligence Platform
 
-Transform meetings into structured knowledge automatically. Upload a recording, a pasted
-transcript, or a document (txt/pdf/docx), and get a structured report back: an executive summary,
-agenda/discussion/decision/risk items, and action items with owners, deadlines and priority.
+A full-stack application that turns meeting recordings, pasted transcripts and documents into structured meeting minutes: an executive summary, agenda/discussion/decision/risk items, and action items with owners, deadlines and priority. Transcription and AI analysis run as asynchronous background jobs, and the dashboard updates live while a meeting is processing.
 
-**Status:** core pipeline is live and deployed. Upload → transcription (Groq-hosted Whisper) →
-AI analysis (Groq-hosted `openai/gpt-oss-120b`) → report, all working end to end, with a
-dashboard, history, and settings pages, and live status updates while a meeting is processing (no
-manual reload needed). Deployed: the app on Vercel, background jobs on Trigger.dev Production.
+The product is named **Minutes** in the UI; this repository is `meeting-minutes`.
 
-**Not built yet:** public share links and PDF/branded export (`ShareLink` model and
-`src/features/sharing`/`src/features/pdf` exist as placeholders for a later pass, not working
-features — don't expect a share link or a PDF download yet) and editing a generated report in
-place.
+## Status
 
-## Run it on your computer (first time)
+**Working end to end:** upload (audio, pasted text, `.txt`, `.pdf`, `.docx`) → transcription → AI analysis → report, with a dashboard, meeting history and settings pages.
 
-You need [Node.js](https://nodejs.org) version 20 or newer (choose the "LTS" download).
+**Not built yet:** public share links and PDF/branded export (the `ShareLink` model and the `src/features/sharing` and `src/features/pdf` folders are placeholders), and editing a generated report in place. There is no integration with other applications in this repository.
 
-1. Open a terminal in this folder.
-2. Check Node: `node -v` (should show v20 or higher).
-3. Install pnpm (the package manager): `npm install -g pnpm`
-4. Install the project's packages: `pnpm install` (takes a minute or two)
-5. Format the files once so they match the project style: `pnpm format`
-6. Create your settings file: `cp .env.example .env.local`, then paste your two Clerk keys, your two
-   database links, and your UploadThing token into it (see the setup sections below)
-7. Create the database tables (first time only): `pnpm db:migrate`
-8. Start the app: `pnpm dev`
-9. Open <http://localhost:3000>. You should see the landing page with "Log in" and "Get started".
+## How it works
 
-After step 4, a file called `pnpm-lock.yaml` appears. Keep it and commit it: it makes everyone's
-installs identical.
-
-## Set up login (Clerk), one time
-
-1. Create a free account at <https://clerk.com> and click **Create application**. Name it "Minutes".
-2. Under sign-in options, turn on **Email** and **Google**. Create the application.
-3. Open the **API keys** page. Copy the **Publishable key** (starts with `pk_`) and the **Secret key**
-   (starts with `sk_`).
-4. Paste them into `.env.local` as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
-5. Restart `pnpm dev` (press Ctrl+C, then run it again). Click "Get started", create an account, and
-   you should land on the dashboard page showing your email.
-
-Never share or commit the secret key. If the app refuses to start and mentions "Invalid environment
-variables", one of the two keys is missing or has a typo.
-
-## Set up the database (Neon), one time
-
-1. Create a free account at <https://neon.tech> and create a project named "minutes". Pick the
-   region closest to you. Keep the default database name.
-2. Click **Connect**. Copy the link with **Connection pooling ON** (host contains `-pooler`) and
-   paste it into `.env.local` as `DATABASE_URL`. At the very end of that link add `&pgbouncer=true`.
-3. Untick **Connection pooling**, copy the new link, and paste it as `DIRECT_URL`.
-4. Run `pnpm db:migrate`. When it asks for a migration name, type `init`. This creates all the tables.
-5. Run `pnpm dev`, log in, and open the dashboard. It should now say your account is saved in the
-   database. To look inside the tables, run `pnpm db:studio` (opens in your browser).
-
-Keep the password in these links secret, like the Clerk secret key.
-
-## Set up file uploads (UploadThing), one time
-
-1. Create a free account at <https://uploadthing.com> and create an app named "minutes".
-2. Open **API Keys** and copy the value called **UPLOADTHING_TOKEN** (a long string of letters and numbers).
-3. Paste it into `.env.local` as `UPLOADTHING_TOKEN`.
-4. Restart `pnpm dev`. Go to the Upload page, choose a small file, and it should upload and take you
-   to the dashboard.
-
-## Set up background jobs (Trigger.dev) and speech-to-text (Whisper via Groq), one time
-
-1. Create a free account at <https://trigger.dev> and create a project named "minutes".
-2. Open **Project settings > API keys** and copy the **dev secret key** (starts with `tr_dev_`).
-   Paste it into `.env.local` as `TRIGGER_SECRET_KEY`.
-3. Still on that settings page, copy the **project ref** (starts with `proj_`). Open
-   `trigger.config.ts` in the project and paste it in place of `"proj_replace_me"`. This one is
-   not a secret, so it does not go in `.env.local`.
-4. Create a free account at <https://console.groq.com> (no credit card needed), open **API Keys**,
-   and create a key. Paste it into `.env.local` as `GROQ_API_KEY`. Speech-to-text runs on Groq's
-   free tier (their hosted Whisper, not OpenAI's) — see `docs/adr/0007-groq-transcription-swap.md`
-   for why.
-5. Run `pnpm dev` in one terminal and `pnpm trigger:dev` in a second terminal (same folder). The
-   first time, `trigger:dev` will open a browser tab asking you to log in — do that once.
-6. On the Upload page, upload a short recording. Its status moves from Uploaded to Queued to
-   Transcribing to Analysing automatically. Run `pnpm db:studio` to see the transcript that
-   appears in the `Transcript` and `TranscriptSegment` tables.
-
-If a recording gets stuck on "Queued", `pnpm trigger:dev` probably isn't running.
-
-## Everyday commands
-
-| Command            | What it does                                      |
-| ------------------ | ------------------------------------------------- |
-| `pnpm dev`         | Runs the app locally with live reload             |
-| `pnpm build`       | Builds the production version                     |
-| `pnpm lint`        | Checks code for common mistakes                   |
-| `pnpm typecheck`   | Checks TypeScript types                           |
-| `pnpm test`        | Runs the unit test suite (Vitest) once            |
-| `pnpm test:watch`  | Runs the unit test suite, re-running on file save |
-| `pnpm format`      | Formats all files consistently                    |
-| `pnpm check`       | Runs lint, typecheck, format check and tests      |
-| `pnpm db:migrate`  | Applies table changes from `prisma/schema.prisma` |
-| `pnpm db:studio`   | Opens a browser view of the database tables       |
-| `pnpm trigger:dev` | Runs background jobs (transcription) locally      |
-
-## Where things live
-
-```text
-src/app/          Pages and URLs only (thin files)
-src/features/     One folder per feature (auth, upload, meetings, ...)
-src/components/   ui/ (shadcn), layout/, shared/ (reusable pieces)
-src/lib/          Tools with no feature knowledge (env, utils)
-src/config/       Site name and product limits
-src/prompts/      Placeholder for versioned AI prompts; the real prompt + schema
-                  currently lives inline in src/features/ai's groq-provider.ts
-prisma/           Database schema
-trigger/          Background jobs (transcription + AI analysis pipeline)
-docs/adr/         Short records of big decisions
+```
+Browser ──► Next.js 15 (App Router, server components/actions)
+             │  Clerk auth · Prisma · UploadThing uploads
+             ▼
+        PostgreSQL (Neon) ◄──── Trigger.dev task: process-meeting-intake
+                                   1. fetch file / transcript
+                                   2. transcribe audio (Whisper on Groq, chunked via ffmpeg)
+                                   3. analyse transcript (gpt-oss-120b on Groq, strict JSON schema)
+                                   4. persist Report, ReportItems, ActionItems
 ```
 
-Rules: imports flow downward (app uses features, features use lib and components); a feature
-exposes only what is in its `index.ts`; only services talk to the database.
+- A meeting moves through `UPLOADED → QUEUED → TRANSCRIBING → ANALYSING → COMPLETED` (or `FAILED`); the UI polls and refreshes without a manual reload.
+- Every row a user owns is reached through `User → Meeting`, and queries filter by `userId`.
+- The AI response is requested as structured output (`json_schema`, strict mode) and validated before it is stored; a malformed response is a failed job rather than a half-written report.
+- Environment variables are validated at startup (`src/lib/env.ts`).
+- Architecture decisions are recorded in [`docs/adr/`](docs/adr), including why transcription and analysis moved to Groq-hosted models (ADR 0007, 0009).
 
-## If something goes wrong
+## Tech stack
 
-- `command not found: pnpm` or `node`: repeat steps 2 and 3.
-- Install or start errors: copy the full message and send it to whoever is helping you.
-- Port 3000 busy: run `pnpm dev -p 3001`.
+- **App:** Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui
+- **Auth:** Clerk
+- **Data:** PostgreSQL with Prisma (models include `Meeting`, `Transcript`, `Report`, `ReportItem`, `ActionItem`, `ProcessingJob`)
+- **Background jobs:** Trigger.dev v4
+- **AI:** Groq-hosted Whisper (speech-to-text) and `openai/gpt-oss-120b` (analysis), called through the OpenAI SDK
+- **Files:** UploadThing; `ffmpeg-static`/`fluent-ffmpeg`, `pdf-parse` and `mammoth` for media and document handling
+- **Tooling:** Vitest, ESLint, Prettier, pnpm, GitHub Actions
+
+## Getting started
+
+Requires Node.js 20+, pnpm, and free accounts for Clerk, Neon (PostgreSQL), UploadThing, Trigger.dev and Groq.
+
+```bash
+pnpm install
+cp .env.example .env.local     # then fill in the values below
+pnpm db:migrate                # create the tables
+pnpm dev                       # http://localhost:3000
+pnpm trigger:dev               # in a second terminal: runs the background jobs
+```
+
+`trigger.config.ts` contains a Trigger.dev project reference (not a secret). Replace it with your own project's ref from the Trigger.dev dashboard.
+
+### Environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Clerk keys |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Clerk webhook verification |
+| `DATABASE_URL` | Pooled Postgres connection (host contains `-pooler`; append `&pgbouncer=true`) |
+| `DIRECT_URL` | Direct Postgres connection, used by Prisma migrations |
+| `UPLOADTHING_TOKEN` | UploadThing app token |
+| `TRIGGER_SECRET_KEY` | Trigger.dev secret key (`tr_dev_…` for local development) |
+| `GROQ_API_KEY` | Groq key for transcription and analysis |
+
+See [`.env.example`](.env.example) for the full list. Never commit `.env.local`.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Run, build and serve the app |
+| `pnpm lint` / `pnpm typecheck` / `pnpm format:check` | Static checks |
+| `pnpm test` | Unit tests (Vitest) |
+| `pnpm check` | Lint, typecheck, format check and tests |
+| `pnpm db:migrate` / `pnpm db:deploy` / `pnpm db:studio` | Prisma migrations and browser |
+| `pnpm trigger:dev` | Run background jobs locally |
+
+## Testing
+
+`pnpm test` runs 7 unit tests across 2 files (report retrieval and upload limit checks). Coverage is small: there are no end-to-end tests and the Trigger.dev pipeline is not covered by automated tests. GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, format check, tests and a build on pushes to `master` and on pull requests, using placeholder environment values.
+
+## Project layout
+
+```text
+src/app/          Routes and pages (thin)
+src/features/     One folder per feature (auth, upload, meetings, ai, history, ...)
+src/components/   ui/, layout/, shared/
+src/lib/          Env validation, utilities
+trigger/          Background pipeline (transcription + AI analysis)
+prisma/           Schema and migrations
+docs/adr/         Architecture decision records
+```
+
+## License
+
+No license has been chosen; all rights are reserved by default.

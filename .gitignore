@@ -28,3 +28,7 @@ npm-debug.log*
 .trigger
 _tmp_*
 .env*
+
+# local AI-agent tooling (not part of the application)
+CLAUDE.md
+.claude/
